@@ -9,7 +9,7 @@ resolution<-100
 
 forest_p<-0.25
 
-block_size<-1
+block_size<-50
 
 
 gen_land<-function(resolution, forest_p, block_size, n_rep=1){
@@ -39,19 +39,49 @@ gen_land<-function(resolution, forest_p, block_size, n_rep=1){
       }
     }
     rm <- rast(m)
+    m_forest<-m
+    m_forest[m_forest==0]<-NA
+    rm_forest<-rast(m_forest)
     #plot(rm)
-    core<-data.table(lsm_c_cpland(rm))
-    forest_core_p<-core[class==1]$value/100
-    crop_core_p<-core[class==0]$value/100
-    forest_edge_p<-forest_p-forest_core_p
-    conf[[rep]]<-data.table(forest_core_p=forest_core_p, 
-                     crop_core_p=crop_core_p, 
-                     forest_edge_p=forest_edge_p,
-                     rep=rep
-                     )
+    boundary<-boundaries(rm_forest)
+    boundary.points<-rasterTopoints(boundary, colname="edge")
+    land_points<-rasterTopoints(rm, colname="land")
+    land_points$boundary<-ifelse(land_points$x %in% c(1, resolution) |
+                                   land_points$y %in% c(1, resolution),
+                            T, F)
+    points<-merge(land_points, boundary.points, by=c("x", "y"), all=T)
+    points[is.na(edge)]$edge<-0
+    N_point<-points[, .(N=.N), by=list(land, boundary, edge)]
+    N_edge<-N_point[land==1 & boundary==F & edge==1]$N
+    N_core<-N_point[land==1 & boundary==F & edge==0]$N
+    if (length(N_edge)==0){
+      N_edge<-0
+    }
+    if (length(N_core)==0){
+      N_core<-0
+    }
+    #table(values(boundary))
+    #core<-data.table(lsm_c_cpland(rm))
+    #forest_core_p<-core[class==1]$value * (resolution^2)
+    #crop_core_p<-core[class==0]$value * (resolution^2)
+    #boundary_p<-((resolution-1)*4)/(resolution^2)
+    #forest_edge_p<-forest_p-forest_core_p-
+    
+    conf[[rep]]<-data.table(N_core=N_core, 
+                            N_edge=N_edge,
+                            rep=rep
+    )
     land_rasters[[rep]]<-rm
   }
   conf_df<-rbindlist(conf)
   
   list(conf=conf_df, land_rasters=land_rasters)
+}
+
+rasterTopoints<-function(r, colname="col"){
+  points<-data.table(as.data.frame(r, xy=T))
+  points$x<-ceiling(points$x)
+  points$y<-ceiling(points$y)
+  colnames(points)[3]<-colname
+  points
 }
