@@ -1,43 +1,37 @@
-library(sp)
 library(landscapemetrics)
 library(terra)
 library(data.table)
+library(ggplot2)
 
-setwd("C:/Users/qiaoh/GIT/LSS_Project/lss")
-resolution<-100
-
-
-forest_p<-0.25
-
-block_size<-50
+setwd("/media/huijieqiao/WD22T_50/lss/lss")
 
 
 gen_land<-function(resolution, forest_p, block_size, n_rep=1){
   x.from<-y.from<-seq(1, resolution, by=block_size)
   x.to<-y.to<-seq(block_size, resolution, by=block_size)
-  
-  xy<-data.table(cbind(expand.grid(x.from=x.from, y.from=y.from),
-                       expand.grid(x.to=x.to, y.to=y.to)))
-  
-  n.groups<-nrow(xy)
-  xy$group<-c(1:n.groups)
-  
-  n.forest<-round(n.groups * forest_p)
-  
-  forest_group<-sample(n.groups, n.forest)
-  
-  xy$landuse<-0
-  xy[group %in% forest_group]$landuse<-1
+  x.from<-y.from<-x.from[1:length(x.to)]
   land_rasters<-list()
   conf<-list()
   for (rep in c(1:n_rep)){
+    xy<-data.table(cbind(expand.grid(x.from=x.from, y.from=y.from),
+                         expand.grid(x.to=x.to, y.to=y.to)))
+    
+    n.groups<-nrow(xy)
+    n.forest<-round(n.groups * forest_p)
+    forest_group<-sample(n.groups, n.forest)
+    xy$group<-c(1:n.groups)
+    xy$landuse<-0
+    xy[group %in% forest_group]$landuse<-1
+    
     m <- matrix(0, nrow=resolution, ncol=resolution)
-    for (i in c(1:nrow(xy))){
-      if (xy[i]$landuse==1){
+    xy<-xy[landuse==1]
+    if (nrow(xy)>0){
+      for (i in c(1:nrow(xy))){
         m[between(col(m), xy[i]$x.from, xy[i]$x.to) &
             between(row(m), xy[i]$y.from, xy[i]$y.to)]<-1
       }
     }
+    
     rm <- rast(m)
     m_forest<-m
     m_forest[m_forest==0]<-NA
@@ -69,7 +63,13 @@ gen_land<-function(resolution, forest_p, block_size, n_rep=1){
     
     conf[[rep]]<-data.table(N_core=N_core, 
                             N_edge=N_edge,
-                            rep=rep
+                            rep=rep,
+                            resolution=resolution, 
+                            forest_p=forest_p, 
+                            block_size=block_size,
+                            n.groups=n.groups,
+                            n.forest.groups=n.forest
+                            
     )
     land_rasters[[rep]]<-rm
   }
@@ -84,4 +84,35 @@ rasterTopoints<-function(r, colname="col"){
   points$y<-ceiling(points$y)
   colnames(points)[3]<-colname
   points
+}
+
+if (F){
+  resolution<-100
+  
+  
+  forest_p<-seq(0, 1, 0.1)
+  
+  block_size<-c(1, seq(10, resolution, by=10))
+  
+  conf_land<-data.table(expand.grid(forest_p=forest_p, block_size=block_size))
+  land_rasters<-list()
+  land_conf<-list()
+  i=1
+  for (i in c(1:nrow(conf_land))){
+    print(paste(i, nrow(conf_land), 
+                conf_land[i]$forest_p,
+                conf_land[i]$block_size))
+    result<-gen_land(resolution=resolution, 
+                     forest_p=conf_land[i]$forest_p,
+                     block_size=conf_land[i]$block_size,
+                     n_rep=10)
+    
+    land_conf[[i]]<-result$conf
+    land_rasters[[i]]<-result
+  }
+  land_conf<-rbindlist(land_conf)
+  saveRDS(land_conf, "../Data/land_conf.rda")
+  saveRDS(land_rasters, "../Data/land_rasters.rda")
+  ggplot(land_conf)+geom_point(aes(x=N_core, y=N_edge, color=factor(forest_p)))+
+    facet_wrap(~block_size, nrow=3, scale="free_y")
 }
