@@ -7,13 +7,14 @@ lands<-readRDS("../Data/land_conf.rda")
 hist(lands$forest_p_real)
 total_product<-seq(0, 10000, by=1000)
 product<-8000
-
+lands_species_list<-list()
 for (product in total_product){
+  print(product)
   species_pool<-species.pool.50.by.type
   
   lands_species<-list()
   for (i in c(1:nrow(species_pool))){
-    print(paste(i, nrow(species_pool)))
+    #print(paste(i, nrow(species_pool)))
     lands_item<-lands
     lands_item<-lands_item[N_crop>0]
     lands_item$yield<-product/lands_item$N_crop
@@ -22,13 +23,13 @@ for (product in total_product){
     paramaters<-list("a"=item$a,
                      "alpha"=item$alpha,
                      "beta"=item$beta)
-    lands_item$biodiversity_output_crop<-f(lands_item$yield, paramaters) * lands_item$N_crop
-    lands_item$biodiversity_output_core<-f(0, paramaters) * lands_item$N_core 
-    lands_item$biodiversity_output_edge<-f(0.05, paramaters) * lands_item$N_edge  
+    lands_item$biodiversity_output_crop<-f(lands_item$yield, paramaters)
+    lands_item$biodiversity_output_core<-f(0, paramaters)
+    lands_item$biodiversity_output_edge<-f(0.05, paramaters) 
     lands_item$biodiversity_output<-
-      lands_item$biodiversity_output_core + 
-      lands_item$biodiversity_output_crop + 
-      lands_item$biodiversity_output_edge
+      lands_item$biodiversity_output_core * lands_item$N_core  + 
+      lands_item$biodiversity_output_crop * lands_item$N_crop + 
+      lands_item$biodiversity_output_edge * lands_item$N_edge 
     lands_item<-lands_item[yield<=1]
     if (F){
       plot(lands_item$biodiversity_output, lands_item$yield)
@@ -44,9 +45,10 @@ for (product in total_product){
   }
   
   lands_species_df<-rbindlist(lands_species)
-  lands_species_df[a==lands_species_df[1]$a & rep==1
-                   & forest_p %in% c(0.2, 0.5)
-                   & block_size ==20]
+  lands_species_list[[length(lands_species_list)+1]]<-lands_species_df
+  #lands_species_df[a==lands_species_df[1]$a & rep==1
+  #                 & forest_p %in% c(0.2, 0.5)
+  #                 & block_size ==20]
   
   if (F){
     

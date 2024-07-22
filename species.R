@@ -89,3 +89,11 @@ ggplot(all_curves[alpha==beta])+geom_line(aes(x=yield, y=v, color=label))+
   theme(legend.position = "none")
 
 
+f<-expression(y=x^exp(1))
+df1<-deriv(f, "x", function.arg = T)
+df2<-deriv3(f, "x", function.arg = T)
+x<-seq(0, 1, by=0.1)
+df1(x)
+
+df2(x)
+
