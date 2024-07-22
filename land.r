@@ -128,6 +128,11 @@ if (F){
     land_rasters[[i]]<-result
     
     if (F){
+      result<-gen_land(resolution=resolution, 
+                       forest_p=forest_p,
+                       block_size=block_size,
+                       n_rep=10)
+      
       all_points<-list()
       for (k in c(1:length(result$land_rasters))){
         pp<-rasterTopoints(result$land_rasters[[k]])
