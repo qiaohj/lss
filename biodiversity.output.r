@@ -9,6 +9,7 @@ lands$N_crop<-resolution ^ 2 - lands$N_core - lands$N_edge - lands$N_boundard
 lands$land.type<-paste(lands$forest_p, lands$block_size)
 total_product<-seq(0, 10000, by=10)
 product<-1000
+
 for (product in total_product){
   species_pool<-species.pool.50.by.type
   
