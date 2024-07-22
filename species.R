@@ -10,6 +10,40 @@ yield.function<-function(type="loser"){
     }
   }
   
+ 
+  if (type=="loser.linear"){
+    f<-function(yield=0, parameters=list("alpha"=0.3, "beta"=1)){
+      alpha<-parameters[["alpha"]]
+      beta<-parameters[["beta"]]
+      yield_df<-data.table(yield=yield)
+      yield_df$f<-ifelse(yield<=alpha, 1, 2)
+      b1<-1
+      a1<-(beta-1)/alpha
+      a2<-beta/(alpha-1)
+      b2<-a2*-1
+      yield_df$v<-a1 * yield_df$yield +b1
+      yield_df[f==2]$v<-a2 * yield_df[f==2]$yield +b2
+      yield_df$v
+    }
+  }
+  
+  if (type=="winner.linear"){
+    f<-function(yield=0, parameters=list("alpha"=0.3, "beta"=1)){
+      alpha<-parameters[["alpha"]]
+      beta<-parameters[["beta"]]
+      yield_df<-data.table(yield=yield)
+      yield_df$f<-ifelse(yield<=alpha, 1, 2)
+      b1<-0
+      a1<-beta/alpha
+      
+      b2<-(alpha-beta)/(alpha-1)
+      a2<-1-b2
+      yield_df$v<-a1 * yield_df$yield +b1
+      yield_df[f==2]$v<-a2 * yield_df[f==2]$yield +b2
+      yield_df$v
+    }
+  }
+  
   if (type=="winner"){
     f<-function(yield=0, parameters=list("a"=1)){
       yield^parameters[["a"]]
@@ -30,9 +64,40 @@ yield.function<-function(type="loser"){
   }  
   f
 }
+#
+alpha<-c(0.30, 0.70)
+beta<-seq(0, 1, by=0.05)
+type<-c("loser.linear", "winner.linear")
+coms<-data.table(expand.grid(alpha=alpha, 
+                             beta=beta,
+                             type=type))
+all_curves<-list()
+for (i in c(1:nrow(coms))){
+  f<-yield.function(type=coms[i]$type)
+  lines<-data.table(yield=yield, 
+                    v=f(yield, parameters=list("alpha"=coms[i]$alpha,
+                                               "beta"=coms[i]$beta)),
+                    alpha=coms[i]$alpha,
+                    beta=coms[i]$beta,
+                    type=coms[i]$type)
+  all_curves[[i]]<-lines
+}
+all_curves<-rbindlist(all_curves)
+all_curves$shape<-"none"
+all_curves[(alpha+beta)<1 & type=="loser.linear"]$shape<-"convex"
+all_curves[(alpha+beta)>1 & type=="loser.linear"]$shape<-"concave"
+all_curves[(alpha>beta) & type=="winner.linear"]$shape<-"convex"
+all_curves[(alpha<beta) & type=="winner.linear"]$shape<-"concave"
+all_curves[round(alpha*100)==round(beta*100) & type=="winner.linear"]$shape<-"none"
+
+all_curves$sub.type<-"forest"
+all_curves[alpha==0.7]$sub.type<-"crop"
+all_curves$label<-paste(all_curves$alpha, all_curves$beta)
+ggplot(all_curves)+geom_line(aes(x=yield, y=v, group=label, color=shape))+
+  facet_grid(sub.type~type)
 
 #need a better scale
-a<-exp(1)^seq(0, 1, 0.05)
+a<-10^seq(0, 2, 0.2)
 a<-c(1/a, a)
 yield<-seq(0, 1, by=0.01)
 type<-c("loser", "winner")
