@@ -80,4 +80,5 @@ for (product in total_product){
   }
   
 }
-
+lands_species_all<-rbindlist(lands_species_list)
+saveRDS(lands_species_all, "../Data/lands_species_all.rda")
