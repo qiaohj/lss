@@ -168,7 +168,7 @@ if (F){
         land_conf[i]$lsm_c_division_crop<-divi[class==0]$value
       }
       if (nrow(divi[class==1])>0){
-        land_conf[i]$lsm_c_division_crop<-divi[class==1]$value
+        land_conf[i]$lsm_c_division_forest<-divi[class==1]$value
       }
     }
     saveRDS(land_conf, "../Data/land_conf.rda")
