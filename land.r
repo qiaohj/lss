@@ -7,9 +7,12 @@ setwd("/media/huijieqiao/WD22T_50/lss/lss")
 
 
 gen_land<-function(resolution, forest_p, block_size, n_rep=1){
-  x.from<-y.from<-seq(1, resolution, by=block_size)
-  x.to<-y.to<-seq(block_size, resolution, by=block_size)
-  x.from<-y.from<-x.from[1:length(x.to)]
+  x.from<-seq(1, resolution, by=block_size$x)
+  y.from<-seq(1, resolution, by=block_size$y)
+  x.to<-seq(block_size$x, resolution, by=block_size$x)
+  y.to<-seq(block_size$y, resolution, by=block_size$y)
+  x.from<-x.from[1:length(x.to)]
+  y.from<-y.from[1:length(y.to)]
   land_rasters<-list()
   conf<-list()
   for (rep in c(1:n_rep)){
@@ -60,15 +63,24 @@ gen_land<-function(resolution, forest_p, block_size, n_rep=1){
     #crop_core_p<-core[class==0]$value * (resolution^2)
     #boundary_p<-((resolution-1)*4)/(resolution^2)
     #forest_edge_p<-forest_p-forest_core_p-
+    N_boundard<-resolution * 4 - 4
+    N_crop<-resolution ^ 2 - N_core - N_edge - N_boundard
+    land.type<-paste(forest_p, block_size$x, block_size$y)
     
     conf[[rep]]<-data.table(N_core=N_core, 
                             N_edge=N_edge,
+                            N_crop=N_crop,
+                            N_boundard=N_boundard,
                             rep=rep,
                             resolution=resolution, 
                             forest_p=forest_p, 
-                            block_size=block_size,
+                            block_size.x=block_size$x,
+                            block_size.y=block_size$y,
                             n.groups=n.groups,
-                            n.forest.groups=n.forest
+                            n.forest.groups=n.forest,
+                            land.type=land.type,
+                            forest_p=(N_core+N_edge)/(N_core+N_edge+N_crop)
+                            
                             
     )
     land_rasters[[rep]]<-rm
@@ -92,27 +104,47 @@ if (F){
   
   forest_p<-seq(0, 1, 0.1)
   
-  block_size<-c(1, seq(10, resolution, by=10))
+  block_size_item<-c(1, seq(10, resolution, by=10))
   
-  conf_land<-data.table(expand.grid(forest_p=forest_p, block_size=block_size))
+  conf_land<-data.table(expand.grid(forest_p=forest_p, 
+                                    block_size.x=block_size_item,
+                                    block_size.y=block_size_item
+  ))
   land_rasters<-list()
   land_conf<-list()
-  i=1
+  i=200
   for (i in c(1:nrow(conf_land))){
     print(paste(i, nrow(conf_land), 
                 conf_land[i]$forest_p,
-                conf_land[i]$block_size))
+                conf_land[i]$block_size.x,
+                conf_land[i]$block_size.y))
     result<-gen_land(resolution=resolution, 
                      forest_p=conf_land[i]$forest_p,
-                     block_size=conf_land[i]$block_size,
+                     block_size=list("x"=conf_land[i]$block_size.x,
+                                     "y"=conf_land[i]$block_size.y),
                      n_rep=10)
     
     land_conf[[i]]<-result$conf
     land_rasters[[i]]<-result
+    
+    if (F){
+      all_points<-list()
+      for (k in c(1:length(result$land_rasters))){
+        pp<-rasterTopoints(result$land_rasters[[k]])
+        pp$rep<-k
+        all_points[[k]]<-pp
+      }
+      all_points<-rbindlist(all_points)
+      ggplot(all_points)+geom_tile(aes(x=x, y=y, fill=factor(col)))+
+        facet_wrap(~rep, nrow=2)
+    }
   }
   land_conf<-rbindlist(land_conf)
   saveRDS(land_conf, "../Data/land_conf.rda")
   saveRDS(land_rasters, "../Data/land_rasters.rda")
-  ggplot(land_conf)+geom_point(aes(x=N_core, y=N_edge, color=factor(forest_p)))+
-    facet_wrap(~block_size, nrow=3, scale="free_y")
+  if (F){
+    
+    ggplot(land_conf)+geom_point(aes(x=N_core, y=N_edge, color=factor(forest_p)))+
+      facet_wrap(~block_size, nrow=3, scale="free_y")
+  }
 }
