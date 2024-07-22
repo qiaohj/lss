@@ -157,11 +157,21 @@ if (F){
   writeRaster(stack_r, "../Data/land_rasters.tif", overwrite=TRUE)
   if (F){
     land_conf<-readRDS("../Data/land_conf.rda")
-    land_rasters<-readRDS("../Data/land_rasters.rda")
-    land_conf$lsm_l_ed<- -1
-    for (i in c(1:length(land_rasters))){
+    land_rasters<-rast("../Data/land_rasters.tif")
+    land_conf$lsm_c_division_crop<- -1
+    land_conf$lsm_c_division_forest<- -1
+    for (i in c(1:nrow(land_conf))){
+      print(paste(i, nrow(land_conf)))
       r<-land_rasters[[i]]
+      divi<-data.table(lsm_c_division(r))
+      if (nrow(divi[class==0])>0){
+        land_conf[i]$lsm_c_division_crop<-divi[class==0]$value
+      }
+      if (nrow(divi[class==1])>0){
+        land_conf[i]$lsm_c_division_crop<-divi[class==1]$value
+      }
     }
+    saveRDS(land_conf, "../Data/land_conf.rda")
   }
   
   if (F){
