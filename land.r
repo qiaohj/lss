@@ -147,7 +147,14 @@ if (F){
   land_conf<-rbindlist(land_conf)
   saveRDS(land_conf, "../Data/land_conf.rda")
   saveRDS(land_rasters, "../Data/land_rasters.rda")
-  
+  all_raster<-list()
+  for (i in c(1:length(land_rasters))){
+    for (j in c(1:length(land_rasters[[i]]$land_rasters))){
+      all_raster[[length(all_raster)+1]]<-land_rasters[[i]]$land_rasters[[j]]
+    }
+  }
+  stack_r<-rast(all_raster)
+  writeRaster(stack_r, "../Data/land_rasters.tif", overwrite=TRUE)
   if (F){
     land_conf<-readRDS("../Data/land_conf.rda")
     land_rasters<-readRDS("../Data/land_rasters.rda")
