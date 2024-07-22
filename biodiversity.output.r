@@ -5,8 +5,8 @@ resolution<-100
 species.pool.50.by.type<-readRDS("../Data/species.pool.50.by.type.rda")
 lands<-readRDS("../Data/land_conf.rda")
 hist(lands$forest_p_real)
-total_product<-seq(0, 10000, by=10)
-product<-5000
+total_product<-seq(0, 10000, by=1000)
+product<-8000
 
 for (product in total_product){
   species_pool<-species.pool.50.by.type
@@ -49,6 +49,12 @@ for (product in total_product){
                    & block_size ==20]
   
   if (F){
+    
+    lands_species_se<-lands_species_df[]
+    ggplot(lands_species_df[sample(nrow(lands_species_df), 1e4)])+
+      geom_point(aes(x=forest_p_real, y=biodiversity_output, color=sub.type))+
+      facet_wrap(~type+sub.type)
+    
     lands_species_sum<-lands_species_df[,.(biodiversity_output=sum(biodiversity_output),
                                            N_sp=.N),
                                         by=list(forest_p, rep, block_size, land.type,

@@ -32,7 +32,7 @@ yield.function<-function(type="loser"){
 }
 
 #need a better scale
-a<-10^seq(0, 2, 0.1)
+a<-exp(1)^seq(0, 1, 0.05)
 a<-c(1/a, a)
 yield<-seq(0, 1, by=0.01)
 type<-c("loser", "winner")

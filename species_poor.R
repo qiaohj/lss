@@ -3,7 +3,7 @@ library(data.table)
 setwd("C:/Users/qiaoh/GIT/LSS_Project/lss")
 
 #need a better scale
-a<-10^seq(0.05, 2, 0.05)
+a<-exp(1)^seq(0.05, 1, 0.01)
 a<-c(1/a, a)
 yield<-seq(0, 1, by=0.01)
 type<-c("loser", "winner")
