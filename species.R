@@ -47,7 +47,10 @@ for (i in c(1:nrow(coms))){
   all_curves[[i]]<-lines
 }
 all_curves<-rbindlist(all_curves)
-ggplot(all_curves)+geom_line(aes(x=yield, y=v, group=a))+
+all_curves$shape<-"none"
+all_curves[a>1]$shape<-"convex"
+all_curves[a<1]$shape<-"concave"
+ggplot(all_curves)+geom_line(aes(x=yield, y=v, group=a, color=shape))+
   facet_wrap(~type)
 
 alpha<-c(2:10)
@@ -72,18 +75,17 @@ for (i in c(1:nrow(alpha_beta))){
 
 all_curves<-rbindlist(all_curves)
 all_curves$label<-paste(all_curves$alpha, all_curves$beta)
-ggplot(all_curves)+geom_line(aes(x=yield, y=v, color=label))+
-  facet_wrap(~type)+
-  theme(legend.position = "none")
+all_curves$shape<-"mirro"
+all_curves[alpha>beta]$shape<-"right"
+all_curves[alpha<beta]$shape<-"left"
+
+
+ggplot(all_curves)+geom_line(aes(x=yield, y=v, group=label, color=shape))+
+  facet_wrap(~type)#+
+  #theme(legend.position = "none")
 
 ggplot(all_curves[alpha==beta])+geom_line(aes(x=yield, y=v, color=label))+
   facet_wrap(~type)+
   theme(legend.position = "none")
 
-ggplot(lines)+geom_line(aes(x=yield, y=v))
-sp.conf<-list(yield.function=yield.function(type="loser", parameters=list(a=10)))
-sp.conf[["fc.i"]]<-sp.conf$yield.function(0, parameters=list(a=10))
-sp.conf[["fc.e"]]<-sp.conf$yield.function(0.05, parameters=list(a=10))
-
-sp.list<-list(sp.conf)
 

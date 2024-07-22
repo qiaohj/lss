@@ -28,13 +28,15 @@ alpha_beta<-data.table(expand.grid(alpha=alpha, beta=beta),
                        yield.function=yield.function(type="hump"),
                        a=0,
                        type="hump",
-                       sub.type="norm")
-alpha_beta[alpha>beta]$sub.type<-"left"
-alpha_beta[alpha<beta]$sub.type<-"right"
+                       sub.type="mirro")
+alpha_beta[alpha>beta]$sub.type<-"right"
+alpha_beta[alpha<beta]$sub.type<-"left"
 
 species.all<-rbindlist(list(all_conf, alpha_beta), use.names = T)
 
 saveRDS(species.all, "../Data/species.all.rda")
+
+table(species.all$type)
 
 species.pool.50.by.type<- species.all[,.SD[sample(.N, 50)],by = type]
 saveRDS(species.pool.50.by.type, "../Data/species.pool.50.by.type.rda")

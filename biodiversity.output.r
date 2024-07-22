@@ -8,67 +8,67 @@ lands$N_boundard<-resolution * 4 - 4
 lands$N_crop<-resolution ^ 2 - lands$N_core - lands$N_edge - lands$N_boundard
 lands$land.type<-paste(lands$forest_p, lands$block_size)
 total_product<-seq(0, 10000, by=10)
-
 product<-1000
-
-
-species_pool<-species.pool.50.by.type
-
-lands_species<-list()
-for (i in c(1:nrow(species_pool))){
-  print(paste(i, nrow(species_pool)))
-  lands_item<-lands
-  lands_item<-lands_item[N_crop>0]
-  lands_item$yield<-product/lands_item$N_crop
-  item<-species_pool[i]
-  f<-item$yield.function[[1]]
-  paramaters<-list("a"=item$a,
-                   "alpha"=item$alpha,
-                   "beta"=item$beta)
-  lands_item$biodiversity_output_crop<-f(lands_item$yield, paramaters) * lands_item$N_crop
-  lands_item$biodiversity_output_core<-f(0, paramaters) * lands_item$N_core 
-  lands_item$biodiversity_output_edge<-f(0.05, paramaters) * lands_item$N_edge  
-  lands_item$biodiversity_output<-
-    lands_item$biodiversity_output_core + 
-    lands_item$biodiversity_output_crop + 
-    lands_item$biodiversity_output_edge
-  lands_item<-lands_item[yield<=1]
-  if (F){
-    plot(lands_item$biodiversity_output, lands_item$yield)
-  }
-  lands_item$type<-item$type
-  lands_item$a<-item$a
-  lands_item$alpha <-item$alpha 
-  lands_item$beta <-item$beta 
-  lands_item$sub.type<-item$sub.type
-  lands_item$total_product<-product
+for (product in total_product){
+  species_pool<-species.pool.50.by.type
   
-  lands_species[[i]]<-lands_item
+  lands_species<-list()
+  for (i in c(1:nrow(species_pool))){
+    print(paste(i, nrow(species_pool)))
+    lands_item<-lands
+    lands_item<-lands_item[N_crop>0]
+    lands_item$yield<-product/lands_item$N_crop
+    item<-species_pool[i]
+    f<-item$yield.function[[1]]
+    paramaters<-list("a"=item$a,
+                     "alpha"=item$alpha,
+                     "beta"=item$beta)
+    lands_item$biodiversity_output_crop<-f(lands_item$yield, paramaters) * lands_item$N_crop
+    lands_item$biodiversity_output_core<-f(0, paramaters) * lands_item$N_core 
+    lands_item$biodiversity_output_edge<-f(0.05, paramaters) * lands_item$N_edge  
+    lands_item$biodiversity_output<-
+      lands_item$biodiversity_output_core + 
+      lands_item$biodiversity_output_crop + 
+      lands_item$biodiversity_output_edge
+    lands_item<-lands_item[yield<=1]
+    if (F){
+      plot(lands_item$biodiversity_output, lands_item$yield)
+    }
+    lands_item$type<-item$type
+    lands_item$a<-item$a
+    lands_item$alpha <-item$alpha 
+    lands_item$beta <-item$beta 
+    lands_item$sub.type<-item$sub.type
+    lands_item$total_product<-product
+    
+    lands_species[[i]]<-lands_item
+  }
+  
+  lands_species_df<-rbindlist(lands_species)
+  lands_species_df[a==lands_species_df[1]$a & rep==1
+                   & forest_p %in% c(0.2, 0.5)
+                   & block_size ==20]
+  
+  lands_species_sum<-lands_species_df[,.(biodiversity_output=sum(biodiversity_output),
+                                         N_sp=.N),
+                                      by=list(forest_p, rep, block_size, land.type,
+                                              type, sub.type, total_product)]
+  
+  
+  p<-ggplot(lands_species_sum)+geom_point(aes(x=forest_p , y=biodiversity_output, color=type))+
+    facet_grid(block_size~sub.type+type)
+  p
+  ggsave(p, filename="../Figures/fig1.png", width=15, height=15)
+  
+  lands_species_sum<-lands_species_df[,.(biodiversity_output=sum(biodiversity_output),
+                                         N_sp=.N),
+                                      by=list(forest_p, rep, block_size, land.type,total_product, type)]
+  
+  
+  p<-ggplot(lands_species_sum)+geom_point(aes(x=block_size , y=biodiversity_output, color=type))+
+    facet_wrap(~forest_p, nrow=3)
+  p
+  ggsave(p, filename="../Figures/fig2.png", width=15, height=15)
+  
 }
-
-lands_species_df<-rbindlist(lands_species)
-lands_species_df[a==lands_species_df[1]$a & rep==1
-                 & forest_p %in% c(0.2, 0.5)
-                 & block_size ==20]
-
-lands_species_sum<-lands_species_df[,.(biodiversity_output=sum(biodiversity_output),
-                                       N_sp=.N),
-                                    by=list(forest_p, rep, block_size, land.type,
-                                            type, sub.type, total_product)]
-
-
-p<-ggplot(lands_species_sum)+geom_point(aes(x=forest_p , y=biodiversity_output, color=type))+
-  facet_grid(block_size~sub.type+type)
-p
-ggsave(p, filename="../Figures/fig1.png", width=15, height=15)
-
-lands_species_sum<-lands_species_df[,.(biodiversity_output=sum(biodiversity_output),
-                                       N_sp=.N),
-                                    by=list(forest_p, rep, block_size, land.type,total_product, type)]
-
-
-p<-ggplot(lands_species_sum)+geom_point(aes(x=block_size , y=biodiversity_output, color=type))+
-  facet_wrap(~forest_p, nrow=3)
-p
-ggsave(p, filename="../Figures/fig2.png", width=15, height=15)
 
