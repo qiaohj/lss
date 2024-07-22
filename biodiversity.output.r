@@ -4,9 +4,9 @@ setwd("C:/Users/qiaoh/GIT/LSS_Project/lss")
 resolution<-100
 species.pool.50.by.type<-readRDS("../Data/species.pool.50.by.type.rda")
 lands<-readRDS("../Data/land_conf.rda")
-
+hist(lands$forest_p_real)
 total_product<-seq(0, 10000, by=10)
-product<-1000
+product<-5000
 
 for (product in total_product){
   species_pool<-species.pool.50.by.type
@@ -48,26 +48,28 @@ for (product in total_product){
                    & forest_p %in% c(0.2, 0.5)
                    & block_size ==20]
   
-  lands_species_sum<-lands_species_df[,.(biodiversity_output=sum(biodiversity_output),
-                                         N_sp=.N),
-                                      by=list(forest_p, rep, block_size, land.type,
-                                              type, sub.type, total_product)]
-  
-  
-  p<-ggplot(lands_species_sum)+geom_point(aes(x=forest_p , y=biodiversity_output, color=type))+
-    facet_grid(block_size~sub.type+type)
-  p
-  ggsave(p, filename="../Figures/fig1.png", width=15, height=15)
-  
-  lands_species_sum<-lands_species_df[,.(biodiversity_output=sum(biodiversity_output),
-                                         N_sp=.N),
-                                      by=list(forest_p, rep, block_size, land.type,total_product, type)]
-  
-  
-  p<-ggplot(lands_species_sum)+geom_point(aes(x=block_size , y=biodiversity_output, color=type))+
-    facet_wrap(~forest_p, nrow=3)
-  p
-  ggsave(p, filename="../Figures/fig2.png", width=15, height=15)
+  if (F){
+    lands_species_sum<-lands_species_df[,.(biodiversity_output=sum(biodiversity_output),
+                                           N_sp=.N),
+                                        by=list(forest_p, rep, block_size, land.type,
+                                                type, sub.type, total_product)]
+    hist(lands[forest_p_real>0]$forest_p_real)
+    
+    p<-ggplot(lands_species_sum)+geom_point(aes(x=forest_p , y=biodiversity_output, color=type))+
+      facet_grid(block_size~sub.type+type)
+    p
+    ggsave(p, filename="../Figures/fig1.png", width=15, height=15)
+    
+    lands_species_sum<-lands_species_df[,.(biodiversity_output=sum(biodiversity_output),
+                                           N_sp=.N),
+                                        by=list(forest_p, rep, block_size, land.type,total_product, type)]
+    
+    
+    p<-ggplot(lands_species_sum)+geom_point(aes(x=block_size , y=biodiversity_output, color=type))+
+      facet_wrap(~forest_p, nrow=3)
+    p
+    ggsave(p, filename="../Figures/fig2.png", width=15, height=15)
+  }
   
 }
 

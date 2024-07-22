@@ -79,7 +79,7 @@ gen_land<-function(resolution, forest_p, block_size, n_rep=1){
                             n.groups=n.groups,
                             n.forest.groups=n.forest,
                             land.type=land.type,
-                            forest_p=(N_core+N_edge)/(N_core+N_edge+N_crop)
+                            forest_p_real=(N_core+N_edge)/(N_core+N_edge+N_crop)
                             
                             
     )
@@ -147,6 +147,16 @@ if (F){
   land_conf<-rbindlist(land_conf)
   saveRDS(land_conf, "../Data/land_conf.rda")
   saveRDS(land_rasters, "../Data/land_rasters.rda")
+  
+  if (F){
+    land_conf<-readRDS("../Data/land_conf.rda")
+    land_rasters<-readRDS("../Data/land_rasters.rda")
+    land_conf$lsm_l_ed<- -1
+    for (i in c(1:length(land_rasters))){
+      r<-land_rasters[[i]]
+    }
+  }
+  
   if (F){
     
     ggplot(land_conf)+geom_point(aes(x=N_core, y=N_edge, color=factor(forest_p)))+
