@@ -3,9 +3,49 @@ library(data.table)
 setwd("C:/Users/qiaoh/GIT/LSS_Project/lss")
 
 yield.function<-function(type="loser"){
+  
+  if (type=="Hill.loser"){
+    f<-function(yield=0, parameters=list("alpha"=0.3, "beta"=1)){
+      alpha<-parameters[["alpha"]]
+      beta<-parameters[["beta"]]
+      if (alpha==0){
+        yield<-yield*2
+        
+        v<-(yield^beta)/(beta+yield^beta)
+        v<-v/max(v)
+        1-v
+      }else{
+        yield<-yield
+        v<-((yield * beta)/(1-yield))^(1/beta)
+        v<-v/max(v)
+        1-v
+      }
+    }
+  }
+  
+  if (type=="Hill.winner"){
+    f<-function(yield=0, parameters=list("alpha"=0.3, "beta"=1)){
+      alpha<-parameters[["alpha"]]
+      beta<-parameters[["beta"]]
+      
+      if (alpha==0){
+        yield<-yield*2
+        v<-(yield^beta)/(beta+yield^beta)
+        v<-v/max(v)
+        v
+      }else{
+        yield<-yield
+        v<-((yield * beta)/(1-yield))^(1/beta)
+        v<-v/max(v)
+        v
+      }
+    }
+  }
+  
   #a is seq(0.1, 10, by=0.1)
   if (type=="loser"){
     f<-function(yield=0, parameters=list("a"=1)){
+      yield<-yield
       (-yield+1)^parameters[["a"]]
     }
   }
@@ -64,9 +104,71 @@ yield.function<-function(type="loser"){
   }  
   f
 }
+
+#need a better scale
+alpha<-c(0,1)
+a<-8
+#alpha<-c(1/alpha, alpha)
+beta<-seq(1, 5, by=0.5)
+beta<-c(1/beta, beta)
+yield<-seq(0, 0.95, by=0.01)
+type<-c("Hill.loser", "Hill.winner")
+coms<-data.table(expand.grid(alpha=alpha, 
+                             beta=beta,
+                             type=type))
+all_curves<-list()
+for (i in c(1:nrow(coms))){
+  f<-yield.function(type=coms[i]$type)
+  lines<-data.table(yield=yield, 
+                    v=f(yield, parameters=list(
+                      "alpha"=coms[i]$alpha,
+                      "beta"=coms[i]$beta)),
+                    alpha=coms[i]$alpha,
+                    beta=coms[i]$beta,
+                    type=coms[i]$type)
+  all_curves[[i]]<-lines
+}
+all_curves<-rbindlist(all_curves)
+all_curves$shape<-"none"
+all_curves[alpha==0 & type=="Hill.loser"]$shape<-"convex"
+all_curves[alpha==1 & type=="Hill.loser"]$shape<-"concave"
+all_curves[alpha==0 & type=="Hill.winner"]$shape<-"concave"
+all_curves[alpha==1 & type=="Hill.winner"]$shape<-"convex"
+
+all_curves$label<-paste(all_curves$alpha, all_curves$beta)
+
+ggplot(all_curves)+geom_line(aes(x=yield, y=v, group=label, color=shape))+
+  facet_wrap(~type)
+
+#need a better scale
+a<-10^seq(0, 2, 0.2)
+a<-c(1/a, a)
+yield<-seq(0, 1, by=0.01)
+type<-c("loser", "winner")
+coms<-data.table(expand.grid(a=a, type=type))
+all_curves<-list()
+for (i in c(1:nrow(coms))){
+  f<-yield.function(type=coms[i]$type)
+  lines<-data.table(yield=yield, 
+                    v=f(yield, parameters=list("a"=coms[i]$a)),
+                    a=coms[i]$a,
+                    type=coms[i]$type)
+  all_curves[[i]]<-lines
+}
+all_curves<-rbindlist(all_curves)
+all_curves$shape<-"none"
+all_curves[a>1]$shape<-"convex"
+all_curves[a<1]$shape<-"concave"
+ggplot(all_curves)+geom_line(aes(x=yield, y=v, group=a, color=shape))+
+  facet_wrap(~type)
+
+
+
+
 #
 alpha<-c(0.30, 0.70)
 beta<-seq(0, 1, by=0.05)
+yield<-seq(0, 1, by=0.01)
 type<-c("loser.linear", "winner.linear")
 coms<-data.table(expand.grid(alpha=alpha, 
                              beta=beta,
@@ -95,28 +197,6 @@ all_curves[alpha==0.7]$sub.type<-"crop"
 all_curves$label<-paste(all_curves$alpha, all_curves$beta)
 ggplot(all_curves)+geom_line(aes(x=yield, y=v, group=label, color=shape))+
   facet_grid(sub.type~type)
-
-#need a better scale
-a<-10^seq(0, 2, 0.2)
-a<-c(1/a, a)
-yield<-seq(0, 1, by=0.01)
-type<-c("loser", "winner")
-coms<-data.table(expand.grid(a=a, type=type))
-all_curves<-list()
-for (i in c(1:nrow(coms))){
-  f<-yield.function(type=coms[i]$type)
-  lines<-data.table(yield=yield, 
-                    v=f(yield, parameters=list("a"=coms[i]$a)),
-                    a=coms[i]$a,
-                    type=coms[i]$type)
-  all_curves[[i]]<-lines
-}
-all_curves<-rbindlist(all_curves)
-all_curves$shape<-"none"
-all_curves[a>1]$shape<-"convex"
-all_curves[a<1]$shape<-"concave"
-ggplot(all_curves)+geom_line(aes(x=yield, y=v, group=a, color=shape))+
-  facet_wrap(~type)
 
 alpha<-c(2:10)
 beta<-c(2:10)
