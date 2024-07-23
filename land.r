@@ -158,8 +158,14 @@ if (F){
   if (F){
     land_conf<-readRDS("../Data/land_conf.rda")
     land_rasters<-rast("../Data/land_rasters.tif")
+    if (F){
+      land_conf$ID<-c(1:nrow(land_conf))
+      land_conf[forest_p==0.2 & block_size.x==10 & rep==1]
+      plot(land_rasters[[1341]])
+    }
     land_conf$lsm_c_division_crop<- -1
     land_conf$lsm_c_division_forest<- -1
+    
     for (i in c(1:nrow(land_conf))){
       print(paste(i, nrow(land_conf)))
       r<-land_rasters[[i]]
