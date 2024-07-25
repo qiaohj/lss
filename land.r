@@ -3,7 +3,7 @@ library(terra)
 library(data.table)
 library(ggplot2)
 
-setwd("/media/huijieqiao/WD22T_50/lss/lss")
+# setwd("/media/huijieqiao/WD22T_50/lss/lss")
 
 
 gen_land<-function(resolution, forest_p, block_size, n_rep=1){
@@ -112,6 +112,7 @@ if (F){
   ))
   land_rasters<-list()
   land_conf<-list()
+  land_conf$ed <- NA
   i=200
   for (i in c(1:nrow(conf_land))){
     print(paste(i, nrow(conf_land), 
@@ -145,8 +146,8 @@ if (F){
     }
   }
   land_conf<-rbindlist(land_conf)
-  saveRDS(land_conf, "../Data/land_conf.rda")
-  saveRDS(land_rasters, "../Data/land_rasters.rda")
+  saveRDS(land_conf, "../Data/land/land_conf.rda")
+  saveRDS(land_rasters, "../Data/land/land_rasters.rda")
   all_raster<-list()
   for (i in c(1:length(land_rasters))){
     for (j in c(1:length(land_rasters[[i]]$land_rasters))){
@@ -154,30 +155,34 @@ if (F){
     }
   }
   stack_r<-rast(all_raster)
-  writeRaster(stack_r, "../Data/land_rasters.tif", overwrite=TRUE)
+  writeRaster(stack_r, "../Data//land/land_rasters.tif", overwrite=TRUE)
   if (F){
-    land_conf<-readRDS("../Data/land_conf.rda")
-    land_rasters<-rast("../Data/land_rasters.tif")
+    land_conf<-readRDS("../Data/land/land_conf.rda")
+    land_rasters<-rast("../Data/land/land_rasters.tif")
     if (F){
       land_conf$ID<-c(1:nrow(land_conf))
-      land_conf[forest_p==0.2 & block_size.x==10 & rep==1]
-      plot(land_rasters[[1341]])
+      # land_conf[forest_p==0.2 & block_size.x==10 & rep==1]
+      land_conf[forest_p_real>=0.19 & forest_p_real<=0.21 & block_size.x==10 & block_size.y==20 & rep==1]
+      plot(land_rasters[[2551]])
     }
-    land_conf$lsm_c_division_crop<- -1
-    land_conf$lsm_c_division_forest<- -1
+    # land_conf$lsm_c_division_crop<- -1
+    # land_conf$lsm_c_division_forest<- -1
+    land_conf$ed<- -1
     
     for (i in c(1:nrow(land_conf))){
       print(paste(i, nrow(land_conf)))
       r<-land_rasters[[i]]
-      divi<-data.table(lsm_c_division(r))
-      if (nrow(divi[class==0])>0){
-        land_conf[i]$lsm_c_division_crop<-divi[class==0]$value
-      }
-      if (nrow(divi[class==1])>0){
-        land_conf[i]$lsm_c_division_forest<-divi[class==1]$value
-      }
+      # divi<-data.table(lsm_c_division(r))
+      # if (nrow(divi[class==0])>0){
+      #   land_conf[i]$lsm_c_division_crop<-divi[class==0]$value
+      # }
+      # if (nrow(divi[class==1])>0){
+      #   land_conf[i]$lsm_c_division_forest<-divi[class==1]$value
+      # }
+      ed <- data.table(lsm_l_ed(r))
+      land_conf[i]$ed<-ed$value
     }
-    saveRDS(land_conf, "../Data/land_conf.rda")
+    saveRDS(land_conf, "../Data/land/land_conf.rda")
   }
   
   if (F){

@@ -1,16 +1,22 @@
 library(ggplot2)
 library(data.table)
-setwd("C:/Users/qiaoh/GIT/LSS_Project/lss")
+# setwd("C:/Users/qiaoh/GIT/LSS_Project/lss")
+
 resolution<-100
-species.pool.50.by.type<-readRDS("../Data/species.pool.50.by.type.rda")
+# species.pool.50.by.type<-readRDS("../Data/species.pool.50.by.type.rda")
+## all_hill,all_conf, all_linear,all_hump
+species_pool <- readRDS("../Data/species/species.now.50.by.type.rda")
+
 lands<-readRDS("../Data/land_conf.rda")
 hist(lands$forest_p_real)
 total_product<-seq(0, 10000, by=1000)
 product<-8000
 lands_species_list<-list()
+
 for (product in total_product){
   print(product)
-  species_pool<-species.pool.50.by.type
+  # species_pool<-species.pool.50.by.type
+  species_pool<-species_pool
   
   lands_species<-list()
   for (i in c(1:nrow(species_pool))){
@@ -20,6 +26,7 @@ for (product in total_product){
     lands_item$yield<-product/lands_item$N_crop
     item<-species_pool[i]
     f<-item$yield.function[[1]]
+    # f<-item$f[[1]]
     paramaters<-list("a"=item$a,
                      "alpha"=item$alpha,
                      "beta"=item$beta)
@@ -30,6 +37,22 @@ for (product in total_product){
       lands_item$biodiversity_output_core * lands_item$N_core  + 
       lands_item$biodiversity_output_crop * lands_item$N_crop + 
       lands_item$biodiversity_output_edge * lands_item$N_edge 
+    
+    ## sampling edge:core = 1:1
+    lands_item$biodiversity_output_equal <- 
+      lands_item$biodiversity_output_crop * lands_item$N_crop + 
+      mean(c(lands_item$biodiversity_output_edge,lands_item$biodiversity_output_core)) * (lands_item$N_edge+lands_item$N_core)
+    
+    ## sampling all in edge
+    lands_item$biodiversity_output_all_edge <- 
+      lands_item$biodiversity_output_crop * lands_item$N_crop + 
+      lands_item$biodiversity_output_edge * (lands_item$N_edge+lands_item$N_core)
+    
+    ## sampling all in core
+    lands_item$biodiversity_output_all_core <- 
+      lands_item$biodiversity_output_crop * lands_item$N_crop + 
+      lands_item$biodiversity_output_core * (lands_item$N_edge+lands_item$N_core)
+    
     lands_item<-lands_item[yield<=1]
     if (F){
       plot(lands_item$biodiversity_output, lands_item$yield)
@@ -39,6 +62,7 @@ for (product in total_product){
     lands_item$alpha <-item$alpha 
     lands_item$beta <-item$beta 
     lands_item$sub.type<-item$sub.type
+    lands_item$final.type<-item$final.type
     lands_item$total_product<-product
     
     lands_species[[i]]<-lands_item
@@ -81,4 +105,5 @@ for (product in total_product){
   
 }
 lands_species_all<-rbindlist(lands_species_list)
-saveRDS(lands_species_all, "../Data/lands_species_all.rda")
+saveRDS(lands_species_all, "../Data/land_species/lands_species.now.50.by.type.rda")
+# saveRDS(lands_species_all, "../Data/lands_species_all.rda")
