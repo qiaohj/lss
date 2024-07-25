@@ -8,22 +8,18 @@ yield.function<-function(type="loser"){
     f<-function(yield=0, parameters=list("alpha"=0.3, "beta"=1)){
       alpha<-parameters[["alpha"]]
       beta<-parameters[["beta"]]
-      if (yield == 0)
-        {
-          1
-        }else{
       if (alpha==0){
         yield<-yield*2
-        
         v<-(yield^beta)/(beta+yield^beta)
         v<-v/max(v)
+        v[is.nan(v)]<-0
         1-v
       }else{
         yield<-yield
         v<-((yield * beta)/(1-yield))^(1/beta)
         v<-v/max(v)
+        v[is.nan(v)]<-0
         1-v
-      }
       }
     }
   }
@@ -32,21 +28,19 @@ yield.function<-function(type="loser"){
     f<-function(yield=0, parameters=list("alpha"=0.3, "beta"=1)){
       alpha<-parameters[["alpha"]]
       beta<-parameters[["beta"]]
-      if (yield == 0)
-      {
-        0
-      }else{
+      
       if (alpha==0){
         yield<-yield*2
         v<-(yield^beta)/(beta+yield^beta)
         v<-v/max(v)
+        v[is.nan(v)]<-0
         v
       }else{
         yield<-yield
         v<-((yield * beta)/(1-yield))^(1/beta)
         v<-v/max(v)
+        v[is.nan(v)]<-0
         v
-      }
       }
     }
   }
