@@ -162,7 +162,7 @@ if (F){
     if (F){
       land_conf$ID<-c(1:nrow(land_conf))
       # land_conf[forest_p==0.2 & block_size.x==10 & rep==1]
-      land_conf[forest_p_real>=0.19 & forest_p_real<=0.21 & block_size.x==10 & block_size.y==20 & rep==1]
+      land_conf[forest_p_real>=0.19 & forest_p_real<=0.21 & rep==1]
       plot(land_rasters[[2551]])
     }
     # land_conf$lsm_c_division_crop<- -1

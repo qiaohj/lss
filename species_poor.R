@@ -137,11 +137,64 @@ saveRDS(all_conf, "../Data/species/all_conf.rda")
 saveRDS(all_linear, "../Data/species/all_linear.rda")
 saveRDS(all_hump, "../Data/species/all_hump.rda")
 
-table(species.all$final.type)
+table(species.all$type)
 
-species.now<-rbindlist(list(all_conf,all_hump), use.names = T) ##delete hill curve
+species.now<-rbindlist(list(all_conf,all_hump,all_hill), use.names = T)
 table(species.now$type)
-species.now.50.by.type <- species.now[,.SD[sample(.N, 50)],by = type]
-saveRDS(species.now.50.by.type, "../Data/species/species.now.50.by.type.rda")
+species.now.30.by.type <- species.now[,.SD[sample(.N, 30)],by = type]
+
+yield<-seq(0, 1, by=0.01)
+all_curves<-list()
+for (i in c(1:nrow(species.now.30.by.type))){
+  f<-yield.function(type=species.now.30.by.type[i]$type)
+  lines<-data.table(yield=yield, 
+                    v=f(yield, parameters=list(
+                      "a" = species.now.30.by.type[i]$a,
+                      "alpha"=species.now.30.by.type[i]$alpha,
+                      "beta"=species.now.30.by.type[i]$beta)),
+                    a = species.now.30.by.type[i]$a,
+                    alpha =species.now.30.by.type[i]$alpha,
+                    beta =species.now.30.by.type[i]$beta,
+                    group1 = paste(species.now.30.by.type[i]$a,
+                                   species.now.30.by.type[i]$alpha,
+                                   species.now.30.by.type[i]$beta),
+                    type=species.now.30.by.type[i]$type)
+  all_curves[[i]]<-lines
+}
+all_curves<-rbindlist(all_curves)
+ggplot(all_curves)+geom_line(aes(x=yield, y=v,group = group1))+
+  facet_wrap(~type)
+# plot(x=yield,y=all_curves[[1]]$v)
+
+saveRDS(species.now.30.by.type, "../Data/species/species.now.30.by.type.rda")
 # species.pool.50.by.type<- species.all[,.SD[sample(.N, 50)],by = type]
 # saveRDS(species.pool.50.by.type, "../Data/species.pool.50.by.type.rda")
+
+species.now1<-rbindlist(list(all_conf,all_hump), use.names = T) ##delete hill curve
+table(species.now1$type)
+species.now.50.by.type <- species.now1[,.SD[sample(.N, 50)],by = type]
+
+yield<-seq(0, 1, by=0.01)
+all_curves<-list()
+for (i in c(1:nrow(species.now.50.by.type))){
+  f<-yield.function(type=species.now.50.by.type[i]$type)
+  lines<-data.table(yield=yield, 
+                    v=f(yield, parameters=list(
+                      "a" = species.now.50.by.type[i]$a,
+                      "alpha"=species.now.50.by.type[i]$alpha,
+                      "beta"=species.now.50.by.type[i]$beta)),
+                    a = species.now.50.by.type[i]$a,
+                    alpha =species.now.50.by.type[i]$alpha,
+                    beta =species.now.50.by.type[i]$beta,
+                    group1 = paste(species.now.50.by.type[i]$a,
+                                   species.now.50.by.type[i]$alpha,
+                                   species.now.50.by.type[i]$beta),
+                    type=species.now.50.by.type[i]$type)
+  all_curves[[i]]<-lines
+}
+all_curves<-rbindlist(all_curves)
+ggplot(all_curves)+geom_line(aes(x=yield, y=v,group = group1))+
+  facet_wrap(~type)
+# plot(x=yield,y=all_curves[[1]]$v)
+
+saveRDS(species.now.50.by.type, "../Data/species/species.now.50.by.type.rda")

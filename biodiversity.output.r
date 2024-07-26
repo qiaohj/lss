@@ -105,5 +105,5 @@ for (product in total_product){
   
 }
 lands_species_all<-rbindlist(lands_species_list)
-saveRDS(lands_species_all, "../Data/land_species/lands_species.now.50.by.type.rda")
+saveRDS(lands_species_all, "../Data/land_species/lands_species.now.50.by.type.rda.rda")
 # saveRDS(lands_species_all, "../Data/lands_species_all.rda")
