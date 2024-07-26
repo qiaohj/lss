@@ -65,6 +65,7 @@ for (i in c(1:nrow(inflection.points))){
   rm("fit")
 }
 all<-rbindlist(all)
+configures<-all[, .(N=.N), by=list(a, b, c, x_threshold, y_threshold, type, group)]
 ggplot(all)+geom_line(aes(x=x, y=y, color=type, group=group))+
   facet_wrap(~x_threshold, scale="free")
 
