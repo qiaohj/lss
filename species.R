@@ -3,7 +3,48 @@ library(data.table)
 # setwd("C:/Users/qiaoh/GIT/LSS_Project/lss")
 
 yield.function<-function(type="loser"){
-  
+  if (type=="exponential"){
+    f<-function(yield=0, parameters=list("alpha"=0.3, "beta"=1, "a"=0)){
+      alpha<-parameters[["alpha"]]
+      beta<-parameters[["beta"]]
+      a<-parameters[["a"]]
+      v_shift<-1
+      yield_shift<-1
+      
+      if (alpha<0){
+        
+        yield_shift<--1
+        if (beta<0){
+          type<-"exponential.winner"
+          shape<-"concave"
+          v_shift<- -1
+        }else{
+          type<-"exponential.loser"
+          shape<-"convex"
+        }
+      }else{
+        
+        if (beta<0){
+          type<-"exponential.loser"
+          shape<-"concave"
+          v_shift<- -1
+        }else{
+          type<-"exponential.winner"
+          shape<-"convex"
+        }
+      }
+      if (yield_shift==-1){
+        yield<-1-yield
+      }
+      v<-abs(alpha)*exp(1)^(abs(beta)*(yield))+a
+      if (v_shift==1){
+        v
+      }else{
+        1-v
+      }
+      
+    }
+  }
   if (type=="Hill.loser"){
     f<-function(yield=0, parameters=list("alpha"=0.3, "beta"=1)){
       alpha<-parameters[["alpha"]]
@@ -107,6 +148,55 @@ yield.function<-function(type="loser"){
   }  
   f
 }
+#exponential
+yield<-seq(0, 1, by=0.01)
+exponential_conf<-readRDS("../Data/exponential.curve.conf.rda")
+all_curves<-list()
+i=1
+coms<-data.table(expand.grid(a=c(1, -1), b=c(1, -1)))
+for (j in c(1:nrow(coms))){
+  for (i in c(1:nrow(exponential_conf))){
+    a<-exponential_conf[i]$a * coms[j]$a
+    b<-exponential_conf[i]$b * coms[j]$b
+    f<-yield.function(type="exponential")
+    
+    if (a<0){
+      if (b<0){
+        type<-"exponential.winner"
+        shape<-"concave"
+      }else{
+        type<-"exponential.loser"
+        shape<-"convex"
+      }
+    }else{
+      if (b<0){
+        type<-"exponential.loser"
+        shape<-"concave"
+      }else{
+        type<-"exponential.winner"
+        shape<-"convex"
+      }
+    }
+    
+    lines<-data.table(yield=yield, 
+                      v=f(yield, parameters=list(
+                        "alpha"=a,
+                        "beta"=b,
+                        "a"=exponential_conf[i]$c)),
+                      a=exponential_conf[i]$c,
+                      alpha=a,
+                      beta=b,
+                      type=type,
+                      shape=shape)
+    all_curves[[length(all_curves)+1]]<-lines
+  }
+}
+all_curves<-rbindlist(all_curves)
+
+all_curves$label<-paste(all_curves$alpha, all_curves$beta)
+
+ggplot(all_curves)+geom_line(aes(x=yield, y=v, group=label, color=shape))+
+  facet_wrap(~type)
 
 #need a better scale
 alpha<-c(0,1)

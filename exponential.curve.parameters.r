@@ -4,14 +4,22 @@ library(minpack.lm)
 rm(list=ls())
 k<-seq(0.1, 0.9, by=0.1)
 
-x2<-seq(0.1, 0.9, by=0.1)
-y2<-c(1/(10^c(1:6)), 
-      seq(0.1, 0.9, by=0.01))
-y2<-c(seq(0.01, 0.9, by=0.01))
-y2<-c(1/(10^c(1:6)))
+x_step<-seq(0.1, 0.8, by=0.1)
+#y2<-c(1/(10^c(1:6)), 
+#      seq(0.1, 0.9, by=0.01))
+y2<-c()
+x2<-c()
+bin<-0.01
+for (i in c(1:length(x_step))){
+  y2_item<-seq(0.01, x_step[i]-bin, by=x_step[i]*bin * 10)
+  y2<-c(y2, y2_item)
+  x2<-c(x2, rep(x_step[i], length(y2_item)))
+}
+#y2<-c(1/(10^c(1:6)))
 inflection.points<-data.table(x1=0, x3=1, y1=0, y3=1, 
-                              expand.grid(x2=x2, y2=y2)
+                              x2=x2, y2=y2
                               )
+table(inflection.points$x2)
 inflection.points<-inflection.points[x2>=y2]
 i=1
 all<-list()
@@ -66,14 +74,20 @@ for (i in c(1:nrow(inflection.points))){
 }
 all<-rbindlist(all)
 configures<-all[, .(N=.N), by=list(a, b, c, x_threshold, y_threshold, type, group)]
+table(configures$x_threshold)
+
+ggplot(all)+geom_line(aes(x=x, y=y, color=factor(x_threshold), group=group))
+
 ggplot(all)+geom_line(aes(x=x, y=y, color=type, group=group))+
   facet_wrap(~x_threshold, scale="free")
 
 ggplot(all)+geom_line(aes(x=x, y=1-y, color=type, group=group))+
   facet_wrap(~x_threshold, scale="free")
+
 ggplot(all)+geom_line(aes(x=1-x, y=1-y, color=type, group=group))+
   facet_wrap(~x_threshold, scale="free")
 
 ggplot(all)+geom_line(aes(x=1-x, y=y, color=type, group=group))+
   facet_wrap(~x_threshold, scale="free")
 
+saveRDS(configures, "../Data/exponential.curve.conf.rda")
