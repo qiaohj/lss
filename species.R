@@ -38,11 +38,13 @@ yield.function<-function(type="loser"){
       }
       v<-abs(alpha)*exp(1)^(abs(beta)*(yield))+a
       if (v_shift==1){
-        v
+        v<-v
       }else{
-        1-v
+        v<-1-v
       }
-      
+      v[v>1]<-1
+      v[v<0]<-0
+      v
     }
   }
   if (type=="Hill.loser"){
