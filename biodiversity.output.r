@@ -5,13 +5,17 @@ library(data.table)
 resolution<-100
 # species.pool.50.by.type<-readRDS("../Data/species.pool.50.by.type.rda")
 ## all_hill,all_conf, all_linear,all_hump
-species_pool <- readRDS("../Data/species/species.now.50.by.type.rda")
+species_pool <- readRDS("../Data/species/all_linear.rda")
 
 lands<-readRDS("../Data/land_conf.rda")
 hist(lands$forest_p_real)
 total_product<-seq(0, 10000, by=1000)
 product<-8000
 lands_species_list<-list()
+
+sampling_core <- sampling_edge<-seq(0, 1, by=0.1)
+coms.sampling<-data.table(expand.grid(core=sampling_core, edge=sampling_edge))
+coms.sampling <- coms.sampling[core+edge == 1,]
 
 for (product in total_product){
   print(product)
@@ -38,20 +42,45 @@ for (product in total_product){
       lands_item$biodiversity_output_crop * lands_item$N_crop + 
       lands_item$biodiversity_output_edge * lands_item$N_edge 
     
-    ## sampling edge:core = 1:1
-    lands_item$biodiversity_output_equal <- 
-      lands_item$biodiversity_output_crop * lands_item$N_crop + 
-      mean(c(lands_item$biodiversity_output_edge,lands_item$biodiversity_output_core)) * (lands_item$N_edge+lands_item$N_core)
+    #### sampling based start
+    if (F)
+    {
+      ## sampling edge:core = 1:1
+      lands_item$biodiversity_output_equal <- 
+        lands_item$biodiversity_output_crop * lands_item$N_crop + 
+        mean(c(lands_item$biodiversity_output_edge,lands_item$biodiversity_output_core)) * (lands_item$N_edge+lands_item$N_core)
+      
+      ## sampling all in edge
+      lands_item$biodiversity_output_all_edge <- 
+        lands_item$biodiversity_output_crop * lands_item$N_crop + 
+        lands_item$biodiversity_output_edge * (lands_item$N_edge+lands_item$N_core)
+      
+      ## sampling all in core
+      lands_item$biodiversity_output_all_core <- 
+        lands_item$biodiversity_output_crop * lands_item$N_crop + 
+        lands_item$biodiversity_output_core * (lands_item$N_edge+lands_item$N_core)
+    }
     
-    ## sampling all in edge
-    lands_item$biodiversity_output_all_edge <- 
-      lands_item$biodiversity_output_crop * lands_item$N_crop + 
-      lands_item$biodiversity_output_edge * (lands_item$N_edge+lands_item$N_core)
-    
-    ## sampling all in core
-    lands_item$biodiversity_output_all_core <- 
-      lands_item$biodiversity_output_crop * lands_item$N_crop + 
-      lands_item$biodiversity_output_core * (lands_item$N_edge+lands_item$N_core)
+    ## 
+    # biodiversity_output_sampling_bias <- list()
+    biodiversity_output_sampling_bias <- NA
+    sampling_crop <- lands_item$biodiversity_output_crop * lands_item$N_crop ## no sampling bias in crop
+    j=1
+    for (j in 1:nrow(coms.sampling))
+    {
+      biodiversity_output_sampling <- 
+        sampling_crop + 
+        lands_item$biodiversity_output_core * coms.sampling$core[j] * (lands_item$N_edge+lands_item$N_core) +
+        lands_item$biodiversity_output_edge * coms.sampling$edge[j] * (lands_item$N_edge+lands_item$N_core)
+      biodiversity_output_sampling_bias <- data.frame(cbind(biodiversity_output_sampling_bias,biodiversity_output_sampling))
+    }
+    biodiversity_output_sampling_bias <- biodiversity_output_sampling_bias[,2:12]
+    # biodiversity_output_sampling_biasdata.frame(biodiversity_output_sampling_bias)
+    colnames(biodiversity_output_sampling_bias) <- c("core1.0","core0.9","core0.8","core0.7",
+                                                     "core0.6","core0.5","core0.4","core0.3",
+                                                     "core0.2","core0.1","core0.0")
+    lands_item <- cbind(lands_item,biodiversity_output_sampling_bias)
+    #### sampling based end
     
     lands_item<-lands_item[yield<=1]
     if (F){
@@ -64,6 +93,7 @@ for (product in total_product){
     lands_item$sub.type<-item$sub.type
     lands_item$final.type<-item$final.type
     lands_item$total_product<-product
+    lands_item$speciesID<-item$speciesID
     
     lands_species[[i]]<-lands_item
   }
@@ -105,5 +135,20 @@ for (product in total_product){
   
 }
 lands_species_all<-rbindlist(lands_species_list)
-saveRDS(lands_species_all, "../Data/land_species/lands_species.now.50.by.type.rda.rda")
-# saveRDS(lands_species_all, "../Data/lands_species_all.rda")
+saveRDS(lands_species_all, "../Data/land_species/lands_all_linear.rda")
+## verfication
+if (F)
+{
+  temp <- lands_species_all[5542450,]
+  temp$N_core*temp$biodiversity_output_core + temp$N_edge*temp$biodiversity_output_edge + temp$N_crop*temp$biodiversity_output_crop
+  temp$biodiversity_output
+  
+  core_p <- 1
+  lamda_f <- core_p * temp$biodiversity_output_core + (1-core_p) * temp$biodiversity_output_edge
+  temp$N_crop*temp$biodiversity_output_crop + (10000-temp$N_boundard-temp$N_crop) * lamda_f
+  temp$core1.0
+  
+  data.5000 <- lands_species_all[lands_species_all$total_product == 5000
+                    & lands_species_all$final.type == "loser.linear convex forest",] 
+  ## exponential.loser convex, hump left, loser.linear convex forest
+}

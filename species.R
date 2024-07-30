@@ -261,7 +261,7 @@ ggplot(all_curves)+geom_line(aes(x=yield, y=v, group=a, color=shape))+
 
 
 #
-alpha<-c(0.30, 0.70)
+alpha<-c(0.30, 0.40, 0.60,0.70)
 beta<-seq(0, 1, by=0.05)
 yield<-seq(0, 1, by=0.01)
 type<-c("loser.linear", "winner.linear")
@@ -288,7 +288,7 @@ all_curves[(alpha<beta) & type=="winner.linear"]$shape<-"concave"
 all_curves[round(alpha*100)==round(beta*100) & type=="winner.linear"]$shape<-"none"
 
 all_curves$sub.type<-"forest"
-all_curves[alpha==0.7]$sub.type<-"crop"
+all_curves[alpha==0.7 | alpha == 0.6]$sub.type<-"crop"
 all_curves$label<-paste(all_curves$alpha, all_curves$beta)
 ggplot(all_curves)+geom_line(aes(x=yield, y=v, group=label, color=shape))+
   facet_grid(sub.type~type)
