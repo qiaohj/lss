@@ -11,7 +11,7 @@ resolution<-100
 
 species_pool <- readRDS("../Data/species/all_exponential.rda")
 
-lands<-readRDS("../Data/land_conf.rda")
+lands<-readRDS("../Data/land/land_conf.rda")
 lands$land_id<-c(1:nrow(lands))
 hist(lands$forest_p_real)
 total_product<-seq(0, 10000, by=1000)
@@ -142,20 +142,23 @@ for (product in total_product){
   #                 & block_size ==20]
   
   if (F){
+    lands_species_df<-readRDS(sprintf("../Data/land_species/lands_all_exponential_%d.rda", product))
+    lands_species_sampled<-readRDS(sprintf("../Data/land_species/lands_species_sampled_all_exponential_%d.rda", product))
+    sp_curves<-readRDS("../Data/species/species.curve.exponential.rda") 
     #exponential.loser convex
    sample_spid=100
    
    species_pool[a==sp_curves[sp_id==sample_spid]$a[1]]
    
    sample_spid<-species_pool[a==sp_curves[sp_id==sample_spid]$a[1]]$ID
-   sp_curves<-readRDS("../Data/species/species.curve.exponential.rda")
+   
    sp_curves_item<-sp_curves[sp_id%in%sample_spid]
    p1<-ggplot(sp_curves_item)+geom_line(aes(x=yield, y=v, group=label, color=shape, linetype=type))
    p1
    land_rasters<-rast("../Data/land/land_rasters.tif")
    forest_per<-0.2
    lands_species_item<-lands_species_df[forest_p ==0.2]
-   lands_species_item<-lands_species_item[block_size.x==20 & block_size.y==20]
+   #lands_species_item<-lands_species_item[block_size.x==20 & block_size.y==20]
    lands_species_item<-lands_species_item[sp_id %in% sample_spid]
    #lands_species_item<-lands_species_item[rep==1]
    lands_species_sampled_item<-lands_species_sampled[forest_p==0.2]
@@ -165,7 +168,7 @@ for (product in total_product){
    lands_species_sampled_item<-lands_species_sampled_item[N_forest_sampled>=10 & N_crop >=10]
    #lands_species_sampled_item<-lands_species_sampled_item[rep==1]
    lands_species_item<-lands_species_item[land_id %in% unique(lands_species_sampled_item$land_id)]
-   points<-data.frame(rasterTopoints(land_rasters[[unique(lands_species_item$land_id)]]))
+   points<-data.frame(rasterTopoints(land_rasters[[unique(lands_species_item[rep==1]$land_id)]]))
    pointlist<-list()
    for (i in c(3:ncol(points))){
       item_p<-points[,c(1, 2, i)]
@@ -177,47 +180,78 @@ for (product in total_product){
    p3<-ggplot(pointdf)+geom_tile(aes(x=x, y=y, fill=factor(v)))+
      coord_equal()+
      facet_wrap(~rep)
-   p3
+   
+   points<-data.frame(rasterTopoints(land_rasters[[c(8491, 8601)]]))
+   pointlist<-list()
+   for (i in c(3:ncol(points))){
+     item_p<-points[,c(1, 2, i)]
+     colnames(item_p)[3]<-"v"
+     item_p$rep<-i-2
+     pointlist[[length(pointlist)+1]]<-item_p
+   }
+   pointdf<-rbindlist(pointlist)
+   p5<-ggplot(pointdf[])+geom_tile(aes(x=x, y=y, fill=factor(v)))+
+     coord_equal()+
+     facet_wrap(~rep)
+   #p3
    
    item1<-unique(lands_species_sampled_item[, c("core_p", "edge_p", 
                                                 "type", "shape", 
                                                 "biodiversity_output_weighted",
-                                                "rep")])
+                                                "rep", "land_id",
+                                                "N_edge", "N_core")])
    colnames(item1)[5]<-"biodiversity_output"
    item1$group<-"biodiversity_output_weighted"
    
    item2<-unique(lands_species_sampled_item[, c("core_p", "edge_p", 
                                                 "type", "shape", 
                                                 "biodiversity_output_mean",
-                                                "rep")])
+                                                "rep", "land_id",
+                                                "N_edge", "N_core")])
    colnames(item2)[5]<-"biodiversity_output"
    item2$group<-"biodiversity_output_mean"
    
    item3<-unique(lands_species_item[, c("N_core", "N_edge", 
                                         "type", "shape", 
                                         "biodiversity_output",
-                                        "rep")])
+                                        "rep", "land_id")])
    item3$core_p<-item3$N_core/(item3$N_core + item3$N_edge)
    item3$edge_p<-item3$N_edge/(item3$N_core + item3$N_edge)
    
    item3$group<-"biodiversity_output_real"
-   
    df_p<-rbindlist(list(item1, item2, item3), use.names = T, fill=T)
+   test_lands<-unique(df_p[rep==1]$land_id)
+   test_lands<-test_lands[sample(length(test_lands), 10)]
+   p2<-ggplot(df_p[land_id %in% test_lands])+ 
+     geom_boxplot(aes(x=type, y=biodiversity_output, fill=group))+
+     labs(title=paste("forest", 0.2))+
+     facet_wrap(~shape+land_id, scale="free")
+   p2
    
-   p2<-ggplot(df_p)+ 
+   p6<-ggplot(df_p[land_id %in% test_lands])+ 
      geom_boxplot(aes(x=type, y=biodiversity_output, fill=group))+
      labs(title=paste("forest", 0.2))+
      facet_wrap(~shape, scale="free")
-   p2
+   p6
+   unique(df_p$biodiversity_output)
+   p7<-ggplot(df_p[group!="biodiversity_output_weighted" &
+                     rep==1])+ 
+     geom_point(aes(x=N_edge, y=biodiversity_output, color=group))+
+     labs(title=paste("forest", 0.2))+
+     facet_wrap(~shape+type, scale="free")
+   p7
+   
+   
+   ggsave(p2, filename="../Figures/test.land.png", width=20, height=20)
    df_p[core_p==0 & rep==1]
    p4<-ggplot(df_p)+ 
      geom_point(aes(x=core_p, y=biodiversity_output, color=group))+
-     geom_line(aes(x=core_p, y=biodiversity_output, color=group, group=rep))+
+     #geom_line(aes(x=core_p, y=biodiversity_output, color=group, group=rep))+
      labs(title=paste("forest", 0.2))+
      facet_wrap(~shape+type, scale="free")
    p4
    
-   p<-ggarrange(plotlist=list(p1, p3))
+   p<-ggarrange(plotlist=list(p1, p5))
    p<-ggarrange(plotlist=list(p, p2), nrow=2)
    p
    
