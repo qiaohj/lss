@@ -186,6 +186,36 @@ all_exponential$final.type <- paste(all_exponential$type,all_exponential$shape)
 all_exponential$ID<-c(1:nrow(all_exponential))
 all_exponential$speciesID <- paste(all_exponential$final.type,all_exponential$ID)
 
+if (F){
+  all_curves<-list()
+  for (i in c(1:nrow(all_exponential))){
+    item<-all_exponential[i]
+    type<-item$type
+    shape<-item$shape
+    
+    f<-item$yield.function[[1]]
+    
+    
+    lines<-data.table(yield=yield, 
+                      v=f(yield, parameters=list(
+                        "alpha"=item$alpha,
+                        "beta"=item$beta,
+                        "a"=item$a)),
+                      a=item$a,
+                      alpha=item$alpha,
+                      beta=item$beta,
+                      type=type,
+                      shape=shape,
+                      sp_id=item$ID)
+    all_curves[[length(all_curves)+1]]<-lines
+  }
+  all_curves<-rbindlist(all_curves)
+  
+  all_curves$label<-paste(all_curves$alpha, all_curves$beta)
+  saveRDS(all_curves, "../Data/species/species.curve.exponential.rda")
+  ggplot(all_curves)+geom_line(aes(x=yield, y=v, group=label, color=shape))+
+    facet_wrap(~type)
+}
 
 
 ########
