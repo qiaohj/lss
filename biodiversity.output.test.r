@@ -7,7 +7,7 @@ resolution<-100
 ## all_hill,all_conf, all_linear,all_hump
 
 
-species_pool <- readRDS("../Data/species/all_linear.rda")
+species_pool <- readRDS("../Data/species/all_exponential.rda")
 
 lands<-readRDS("../Data/land_conf.rda")
 lands$land_id<-c(1:nrow(lands))
@@ -75,8 +75,10 @@ for (product in total_product){
     for (j in 1:nrow(coms.sampling))
     {
       sample_item<-data.table(sampling_crop=sampling_crop,
-                              sampling_core=lands_item$biodiversity_output_core * coms.sampling$core[j],
-                              sampling_edge=lands_item$biodiversity_output_edge * coms.sampling$edge[j],
+                              # sampling_core=lands_item$biodiversity_output_core * coms.sampling$core[j],
+                              # sampling_edge=lands_item$biodiversity_output_edge * coms.sampling$edge[j],
+                              sampling_core=lands_item$biodiversity_output_core,
+                              sampling_edge=lands_item$biodiversity_output_edge,
                               core_p=coms.sampling[j]$core,
                               edge_p=coms.sampling[j]$edge,
                               N_core=lands_item$N_core,
@@ -87,16 +89,24 @@ for (product in total_product){
                               forest_p_real=lands_item$forest_p_real,
                               type=item$type,
                               shape=item$shape,
+                              final.type=paste(item$type,item$shape),
                               sub.type=item$sub.type,
                               sp_id=item$ID,
                               rep=lands_item$rep)
-      sample_item$N_core_sampled<-sample_item$core_p * sample_item$N_core
-      sample_item$N_edge_sampled<-sample_item$edge_p * sample_item$N_edge
-      sample_item$N_forest_sampled<-sample_item$N_core_sampled + sample_item$N_edge_sampled
+      # sample_item$N_core_sampled<-sample_item$core_p * sample_item$N_core
+      # sample_item$N_edge_sampled<-sample_item$edge_p * sample_item$N_edge
+      # sample_item$N_forest_sampled<-sample_item$N_core_sampled + sample_item$N_edge_sampled
       
-      sample_item<-sample_item[N_forest_sampled>=10 & N_crop>=10]
+      # sample_item<-sample_item[N_forest_sampled>=10 & N_crop>=10]
       
-      sample_item$biodiversity_output<-sample_item$sampling_crop+sample_item$sampling_core+sample_item$sampling_edge
+      ## lamda forest
+      sample_item$sampling_forest_mean <- (sample_item$sampling_core + sample_item$sampling_edge)/2
+      sample_item$sampling_forest_weighted <- sample_item$sampling_core * sample_item$core_p + sample_item$sampling_edge * sample_item$edge_p
+      
+      # sample_item$biodiversity_output<-sample_item$sampling_crop+sample_item$sampling_core+sample_item$sampling_edge
+      sample_item$biodiversity_output_mean <- sample_item$sampling_forest_mean * (sample_item$N_core + sample_item$N_edge) + sample_item$sampling_crop * sample_item$N_crop
+      sample_item$biodiversity_output_weighted <- sample_item$sampling_forest_weighted * (sample_item$N_core + sample_item$N_edge) + sample_item$sampling_crop * sample_item$N_crop
+      
       lands_species_sampled[[length(lands_species_sampled)+1]]<-sample_item
     }
    
@@ -122,8 +132,8 @@ for (product in total_product){
   lands_species_sampled<-rbindlist(lands_species_sampled)
   
   lands_species_df<-rbindlist(lands_species)
-  saveRDS(lands_species_df, sprintf("../Data/land_species/lands_all_linear_%d.rda", product))
-  saveRDS(lands_species_sampled, sprintf("../Data/land_species/lands_species_sampled_all_linear_%d.rda", product))
+  saveRDS(lands_species_df, sprintf("../Data/land_species/lands_all_exponential_%d.rda", product))
+  saveRDS(lands_species_sampled, sprintf("../Data/land_species/lands_species_sampled_all_exponential_%d.rda", product))
   
   #lands_species_df[a==lands_species_df[1]$a & rep==1
   #                 & forest_p %in% c(0.2, 0.5)
